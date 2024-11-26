@@ -1,0 +1,8 @@
+FROM alpine:latest
+RUN apk update && apk upgrade
+RUN apk add curl perl bash
+
+ADD eso-to-prometheus /usr/bin
+
+CMD [ "bash", "/usr/bin/eso-to-prometheus" ]
+

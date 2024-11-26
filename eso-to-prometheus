@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eu
-########set -x
+#set -x
 
 # force sort to always sort in the same order
 export LC_ALL=C
@@ -9,6 +9,8 @@ PUSH_GW_HOST="${PUSH_GW_HOST:-push-gw.i.83e.de}"
 PUSH_GW_PORT="${PUSH_GW_PORT:-9091}"
 ESO_DB_URL="${ESO_DB_URL:-https://www.eso-database.com/en/user}"
 ESO_DB_ACCOUNTS="${ESO_DB_ACCOUNTS:-L4R5M}"
+# run every X seconds
+REPEAT_CYCLE="${REPEAT_CYCLE:-0}"
 
 rc=0
 

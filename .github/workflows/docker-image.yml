@@ -22,11 +22,19 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GHCR_TOKEN }}
 
-    - name: Build and push container image
+    - name: Build and push ubuntu based container image
       uses: docker/build-push-action@v6
       with:
         push: true
         tags: ghcr.io/l4r5/esodb-exporter:latest
         platforms: linux/amd64
+        dockerfile_path: Dockerfile
 
+    - name: Build and push alpine based container image
+      uses: docker/build-push-action@v6
+      with:
+        push: true
+        tags: ghcr.io/l4r5/esodb-exporter:alpine-latest
+        platforms: linux/amd64
+        dockerfile_path: Dockerfile.alpine
 
