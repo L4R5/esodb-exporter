@@ -26,5 +26,5 @@ jobs:
       uses: docker/build-push-action@v6.10.0
       with:
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/esodb-exporter:latest
+        tags: ghcr.io/l4r5/esodb-exporter:latest
 
