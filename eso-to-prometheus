@@ -1,0 +1,181 @@
+#!/bin/bash
+set -eu
+########set -x
+
+# force sort to always sort in the same order
+export LC_ALL=C
+
+PUSH_GW_HOST="${PUSH_GW_HOST:-push-gw.i.83e.de}"
+PUSH_GW_PORT="${PUSH_GW_PORT:-9091}"
+ESO_DB_URL="${ESO_DB_URL:-https://www.eso-database.com/en/user}"
+ESO_DB_ACCOUNTS="${ESO_DB_ACCOUNTS:-L4R5M}"
+
+rc=0
+
+tmpFile=$(mktemp)
+
+for account in $ESO_DB_ACCOUNTS; do
+  for line_acc in $(curl -s https://www.eso-database.com/en/user/$account |\
+    grep -i -e '</\?TABLE\|</\?TD\|</\?TR\|</\?TH' |\
+    sed 's/^[\ \t]*//g' |    tr -d '\n' |    sed 's/<\/TR[^>]*>/\n/Ig' |\
+    sed 's/<\/\?\(TABLE\|TR\)[^>]*>//Ig' |\
+    sed 's/^<T[DH][^>]*>\|<\/\?T[DH][^>]*>$//Ig' |\
+    sed 's/<\/T[DH][^>]*><T[DH][^>]*>/,/Ig' |\
+    perl -pe 's/<a\ title=\"([a-zA-z0-9\-\ ]+)\"/$1,/g' |\
+    perl -pe 's/\ *href=\"([a-zA-Z0-9\/\-]+)\">/$1,/g' |\
+    perl -pe 's/<img\ title=\"EU/EU,/g' |\
+    perl -pe 's/<img\ title=\"NA/NA,/g' |\
+    cut -f1-3 -d, |\
+    sed '1,/Name,Rank,Champion Rank/d' |\
+    sed -e 's/ /-/g' ); do
+    name="$(echo $line_acc | cut -f1 -d,)"
+    url="https://www.eso-database.com$(echo $line_acc | cut -f2 -d,)statistics"
+    server="$(echo $line_acc | cut -f3 -d,)"
+    
+    #URLS="https://www.eso-database.com/en/character/asgorn-the-stone/20888686/statistics/
+    #https://www.eso-database.com/en/character/az-assine/20897625/statistics/
+    #https://www.eso-database.com/en/character/belic-bontell/16538003/statistics/
+    #https://www.eso-database.com/en/character/ervallion-oakenvale/20689137/statistics/
+    #https://www.eso-database.com/en/character/gumpf/20964694/statistics/
+    #https://www.eso-database.com/en/character/llaronu-darvyn/20446449/statistics/
+    #https://www.eso-database.com/en/character/macht-aua-heil/20775039/statistics/
+    #https://www.eso-database.com/en/character/nathalye-bontel/20438607/statistics/
+    #https://www.eso-database.com/en/character/syd-haykal-eizmiin/20796695/statistics/
+    #https://www.eso-database.com/en/character/vittoria-verus/21042525/statistics/
+    #https://www.eso-database.com/en/character/sinderion-spellthar/21509098/statistics/
+    #https://www.eso-database.com/en/character/zenosha-spellthar/20464786/statistics/"
+    
+    
+    character=$(echo $url | cut -d\/ -f6 )
+    echo $character
+    echo $url
+    total_time_played_cnt=0
+    defeats_cnt=0
+    kills_cnt=0
+    completed_cnt=0
+    died_cnt=0
+    
+    for line in $(curl -s "$url" |\
+      grep -i -e '</\?TABLE\|</\?TD\|</\?TR\|</\?TH' |\
+      sed 's/^[\ \t]*//g' |\
+      tr -d '\n' |\
+      sed 's/<\/TR[^>]*>/\n/Ig' |\
+      sed 's/<\/\?\(TABLE\|TR\)[^>]*>//Ig' |\
+      sed 's/^<T[DH][^>]*>\|<\/\?T[DH][^>]*>$//Ig' |\
+      sed 's/<\/T[DH][^>]*><T[DH][^>]*>/,/Ig' | \
+      sed -e 's/<b>//g' -e 's/<\/b>//g' \
+      -e 's/Total,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Total Tel Var Stones,/g' \
+      -e 's/Total earned,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Total earned Tel Var Stones,/g' \
+      -e 's/Most expensive purchase at merchant,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Most expensive purchase at merchant Tel Var Stones,/g' \
+      -e 's/Deaths,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Deaths Tel Var Stones,/g' \
+      -e 's/Bank,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Bank Tel Var Stones,/g' \
+      -e 's/Character,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Character Tel Var Stones,/g' \
+      -e 's/Merchant purchases,<img alt="Tel Var Stones" src="https:\/\/itemdb.eso-database.com\/icons\/tel_var_small.png" \/> /Merchant purchases Tel Var Stones,/g' \
+      -e 's/Quests,<img alt="Gold" src="https:\/\/itemdb.eso-database.com\/icons\/gold.png" \/> /Quests Gold,/g' \
+      -e 's/<[^>]*>//g' \
+      -e 's/([0-9]\+\.[0-9]\+\%)//g' \
+      -e 's/([0-9]\+\%)//g' \
+      -e 's/\([0-9]\),\([0-9]\)/\1\2/g' \
+      -e 's/(\%)//g' \
+      -e 's/, /,/g' \
+      -e 's/,&nbsp;//g' \
+      -e 's/&nbsp;,//g' \
+      -e 's/\([0-9]\) /\1/g' \
+      -e 's/,,//g' \
+      -e 's/\([0-9]\),/\1\n/g' \
+      -e 's/^ //g' \
+      -e 's/ /_/g' \
+      -e 's/\//_/g' \
+      -e 's/(//g' \
+      -e 's/)//g' \
+      -e 's/://g' \
+      -e 's/\-/_/g' | \
+      tr '[[:upper:]]' '[[:lower:]]' | \
+      grep -v -E "ultimate|master|simple|intermediate|advanced"); do
+      line=$line,
+      #echo $line
+      key="eso_$(echo $line | cut -f1 -d,)"
+      value=$(echo $line | cut -f2 -d,)
+      if [ -z "$value" ]; then
+        continue
+      elif [ "$value" == "no_information_available" ]; then
+        value=0
+      fi
+
+      if [ "$key" == "eso_total_time_played" ]; then
+        # convert days hours minutes to seconds
+        value=$(echo $value | perl -pe 's/([0-9]+)days_([0-9]+)hours?_([0-9]+)minutes?_([0-9]+)seconds?/($1 * 86400 + $2 * 3600 + $3 * 60 + $4)/e')
+        value=$(echo $value | perl -pe 's/([0-9]+)hours?_([0-9]+)minutes?_([0-9]+)seconds?/($1 * 3600 + $2 * 60 + $3)/e')
+        value=$(echo $value | perl -pe 's/([0-9]+)minutes?_([0-9]+)seconds?/($1 * 60 + $2)/e')
+        if [ "$(($total_time_played_cnt % 2))" == 0 ]; then
+          key=eso_tot_total_time_played
+        else
+          key=eso_ia_total_time_played
+        fi
+        let total_time_played_cnt=total_time_played_cnt+1
+      fi
+      
+      if [ "$key" == "eso_died" ]; then
+        if [ "$(($died_cnt % 2))" == 0 ]; then
+          key=eso_died_ia
+        else
+          key=eso_died_bg
+        fi
+        let died_cnt=died_cnt+1
+      fi
+
+      if [ "$key" == "eso_time_spent_fishing" ]; then
+        value=$(echo $value | perl -pe 's/([0-9]+)days_([0-9]+)hours?_([0-9]+)minutes?_([0-9]+)seconds?/($1 * 86400 + $2 * 3600 + $3 * 60 + $4)/e')
+        value=$(echo $value | perl -pe 's/([0-9]+)hours?_([0-9]+)minutes?_([0-9]+)seconds?/($1 * 3600 + $2 * 60 + $3)/e')
+        value=$(echo $value | perl -pe 's/([0-9]+)minutes?_([0-9]+)seconds?/($1 * 60 + $2)/e')
+      fi
+
+      if [ "$key" == "eso_completed" ]; then
+        # rename duplicate entries
+        # 1. quests - exist since the start, no rename
+        # 2. battlegrounds
+        if [ "$(( $completed_cnt % 2 ))" == 1 ]; then
+          key=eso_battleground_completed
+        fi
+        let completed_cnt=$completed_cnt+1
+      fi
+
+      if [ "$key" == "eso_defeats" ]; then
+        # rename duplicate entries
+        # 1. tot, keep, exists since start
+        # 2. battlegrounds
+        if [ "$(( $defeats_cnt % 2 ))" == 1 ]; then
+          key=eso_battleground_defeats
+        fi
+        let defeats_cnt=$defeats_cnt+1
+      fi
+
+      if [ "$key" == "eso_kills" ]; then
+        # rename duplicate entries
+        # 1. xp via kills, keep name as is
+        # 2. battleground kills
+        if [ "$(( $kills_cnt % 2 ))" == 1 ]; then
+          key=eso_battleground_kills
+        fi
+        let kills_cnt=$kills_cnt+1
+      fi
+      
+      #echo $character:$key:$value
+      echo "# TYPE $key gauge" >> $tmpFile
+      echo $key'{character="'$character'",account="'$account'",server="'$server'"} '$value >> $tmpFile
+    done
+  done
+done
+
+tmpFile2=$(mktemp)
+sort -u $tmpFile > $tmpFile2
+
+http=$(curl -s -w '%{http_code}' --data-binary @"$tmpFile2" http://${PUSH_GW_HOST}:${PUSH_GW_PORT}/metrics/job/eso | tail -1)
+echo http: $http
+rm $tmpFile
+rm $tmpFile2
+
+if [ "$http" != "200" ]; then
+  rc=1
+fi
+exit $rc
