@@ -19,12 +19,14 @@ jobs:
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
-        username: ${{ github.actor }}
+        username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and push container image
-      uses: docker/build-push-action@v6.10.0
+      uses: docker/build-push-action@v6
       with:
         push: true
         tags: ghcr.io/l4r5/esodb-exporter:latest
+        platforms: linux/amd64
+
 
