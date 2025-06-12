@@ -1,0 +1,19 @@
+name: clean untagged container images from the registry
+
+on:
+  schedule:
+    - cron: "23 13 13 * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+   steps:
+    - name: Delete all containers from repository without tags
+      uses: Chizkiyahu/delete-untagged-ghcr-action@v6
+      with:
+          token: ${{ secrets.GHCR_TOKEN }}
+          repository_owner: ${{ github.repository_owner }}
+          repository: ${{ github.repository }}
+          untagged_only: true
+          owner_type: user # org or user
+
