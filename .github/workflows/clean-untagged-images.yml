@@ -7,13 +7,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-   steps:
+    steps:
     - name: Delete all containers from repository without tags
       uses: Chizkiyahu/delete-untagged-ghcr-action@v6
       with:
-          token: ${{ secrets.GHCR_TOKEN }}
-          repository_owner: ${{ github.repository_owner }}
-          repository: ${{ github.repository }}
-          untagged_only: true
-          owner_type: user # org or user
+        token: ${{ secrets.GHCR_TOKEN }}
+        repository_owner: ${{ github.repository_owner }}
+        repository: ${{ github.repository }}
+        untagged_only: true
+        owner_type: user # org or user
 
