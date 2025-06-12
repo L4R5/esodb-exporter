@@ -3,6 +3,7 @@ name: clean untagged container images from the registry
 on:
   schedule:
     - cron: "23 13 13 * *"
+  workflow_dispatch:
 
 jobs:
   build:
