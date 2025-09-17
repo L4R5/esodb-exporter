@@ -6,11 +6,16 @@ set -eu
 export LC_ALL=C
 
 PUSH_GW_URL="${PUSH_GW_HOST:-https://push-gw.i.83e.de}"
+echo PUSH_GW_URL: $PUSH_GW_URL
 PUSH_GW_PORT="${PUSH_GW_PORT:-443}"
+echo PUSH_GW_PORT: $PUSH_GW_PORT
 ESO_DB_URL="${ESO_DB_URL:-https://www.eso-database.com}"
+echo ESO_DB_URL: $ESO_DB_URL
 ESO_DB_ACCOUNTS="${ESO_DB_ACCOUNTS:-L4R5M}"
+echo ESO_DB_ACCOUNTS: $ESO_DB_ACCOUNTS
 # run every X seconds
 REPEAT_CYCLE="${REPEAT_CYCLE:-0}"
+echo REPEAT_CYCLE: $REPEAT_CYCLE
 
 rc=0
 
