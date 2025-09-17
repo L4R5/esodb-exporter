@@ -5,9 +5,9 @@ set -eu
 # force sort to always sort in the same order
 export LC_ALL=C
 
-PUSH_GW_HOST="${PUSH_GW_HOST:-push-gw.i.83e.de}"
-PUSH_GW_PORT="${PUSH_GW_PORT:-9091}"
-ESO_DB_URL="${ESO_DB_URL:-https://www.eso-database.com/en/user}"
+PUSH_GW_URL="${PUSH_GW_HOST:-https://push-gw.i.83e.de}"
+PUSH_GW_PORT="${PUSH_GW_PORT:-443}"
+ESO_DB_URL="${ESO_DB_URL:-https://www.eso-database.com}"
 ESO_DB_ACCOUNTS="${ESO_DB_ACCOUNTS:-L4R5M}"
 # run every X seconds
 REPEAT_CYCLE="${REPEAT_CYCLE:-0}"
@@ -17,7 +17,7 @@ rc=0
 tmpFile=$(mktemp)
 
 for account in $ESO_DB_ACCOUNTS; do
-  for line_acc in $(curl -s https://www.eso-database.com/en/user/$account |\
+  for line_acc in $(curl -s $ESO_DB_URL/en/user/$account |\
     grep -i -e '</\?TABLE\|</\?TD\|</\?TR\|</\?TH' |\
     sed 's/^[\ \t]*//g' |    tr -d '\n' |    sed 's/<\/TR[^>]*>/\n/Ig' |\
     sed 's/<\/\?\(TABLE\|TR\)[^>]*>//Ig' |\
@@ -31,7 +31,7 @@ for account in $ESO_DB_ACCOUNTS; do
     sed '1,/Name,Rank,Champion Rank/d' |\
     sed -e 's/ /-/g' ); do
     name="$(echo $line_acc | cut -f1 -d,)"
-    url="https://www.eso-database.com$(echo $line_acc | cut -f2 -d,)statistics"
+    url="$ESO_DB_URL$(echo $line_acc | cut -f2 -d,)statistics"
     server="$(echo $line_acc | cut -f3 -d,)"
     
     #URLS="https://www.eso-database.com/en/character/asgorn-the-stone/20888686/statistics/
@@ -172,7 +172,7 @@ done
 tmpFile2=$(mktemp)
 sort -u $tmpFile > $tmpFile2
 
-http=$(curl -s -w '%{http_code}' --data-binary @"$tmpFile2" http://${PUSH_GW_HOST}:${PUSH_GW_PORT}/metrics/job/eso | tail -1)
+http=$(curl -s -w '%{http_code}' --data-binary @"$tmpFile2" ${PUSH_GW_URL}:${PUSH_GW_PORT}/metrics/job/eso | tail -1)
 echo http: $http
 rm $tmpFile
 rm $tmpFile2
