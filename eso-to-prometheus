@@ -1,11 +1,16 @@
 #!/bin/bash
 set -eu
-#set -x
+
+DEBUG="${DEBUG:-0}"
+echo DEBUG: $DEBUG
+if [ "$DEBUG" = 1 ]; then
+  set -x
+fi
 
 # force sort to always sort in the same order
 export LC_ALL=C
 
-PUSH_GW_URL="${PUSH_GW_HOST:-https://push-gw.i.83e.de}"
+PUSH_GW_URL="${PUSH_GW_URL:-https://push-gw.i.83e.de}"
 echo PUSH_GW_URL: $PUSH_GW_URL
 PUSH_GW_PORT="${PUSH_GW_PORT:-443}"
 echo PUSH_GW_PORT: $PUSH_GW_PORT
@@ -174,8 +179,15 @@ for account in $ESO_DB_ACCOUNTS; do
   done
 done
 
+if [ "$DEBUG" = 1 ]; then
+  cat $tmpFile
+fi
+
 tmpFile2=$(mktemp)
 sort -u $tmpFile > $tmpFile2
+if [ "$DEBUG" = 1 ]; then
+  cat $tmpFile2
+fi
 
 http=$(curl -s -w '%{http_code}' --data-binary @"$tmpFile2" ${PUSH_GW_URL}:${PUSH_GW_PORT}/metrics/job/eso | tail -1)
 echo http: $http
@@ -186,3 +198,4 @@ if [ "$http" != "200" ]; then
   rc=1
 fi
 exit $rc
+
