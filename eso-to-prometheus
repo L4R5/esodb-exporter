@@ -189,6 +189,9 @@ if [ "$DEBUG" = 1 ]; then
   cat $tmpFile2
 fi
 
+command="curl -s -w '%{http_code}' --data-binary @"$tmpFile2" ${PUSH_GW_URL}:${PUSH_GW_PORT}/metrics/job/eso"
+echo command: $command
+
 http=$(curl -s -w '%{http_code}' --data-binary @"$tmpFile2" ${PUSH_GW_URL}:${PUSH_GW_PORT}/metrics/job/eso | tail -1)
 echo http: $http
 rm $tmpFile
